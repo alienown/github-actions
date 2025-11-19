@@ -1,0 +1,75 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      base-ref: ${{ github.base_ref }}
+
+  build-root:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.root-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Build all
+        run: npm run build
+
+      - name: Run all tests
+        run: npm test
+
+  build-actions:
+    needs: [detect-changes, build-root]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.actions != '[]' &&
+      needs.detect-changes.outputs.root-changed == 'false' &&
+      (needs.build-root.result == 'success' || needs.build-root.result == 'skipped')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        action: ${{ fromJson(needs.detect-changes.outputs.actions) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install action dependencies
+        working-directory: ${{ matrix.action }}
+        run: npm ci
+
+      - name: Lint ${{ matrix.action }}
+        working-directory: ${{ matrix.action }}
+        run: npm run lint
+
+      - name: Build ${{ matrix.action }}
+        working-directory: ${{ matrix.action }}
+        run: npm run build
+
+      - name: Test ${{ matrix.action }}
+        working-directory: ${{ matrix.action }}
+        run: npm test

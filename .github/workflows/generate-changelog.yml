@@ -1,0 +1,37 @@
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      action-path:
+        description: 'Path to the action (e.g., generate-changelog). Leave empty to detect from recent changes.'
+        required: false
+        type: string
+
+jobs:
+  detect-changes:
+    if: ${{ !inputs.action-path }}
+    uses: ./.github/workflows/detect-changes.yml
+    with:
+      base-ref: ${{ github.base_ref || 'main' }}
+
+  generate-changelogs:
+    needs: detect-changes
+    if: always() && (needs.detect-changes.outputs.actions != '[]' || inputs.action-path)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      matrix:
+        action: ${{ inputs.action-path && fromJson(format('["{0}"]', inputs.action-path)) || fromJson(needs.detect-changes.outputs.actions) }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate Changelog for ${{ matrix.action }}
+        uses: ./generate-changelog
+        with:
+          openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
+          github-token: ${{ github.token }}
+          version-file: '${{ matrix.action }}/package.json'
+          changelog-path: '${{ matrix.action }}/CHANGELOG.md'
