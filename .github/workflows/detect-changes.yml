@@ -1,0 +1,62 @@
+name: Detect Changes
+
+on:
+  workflow_call:
+    inputs:
+      base-ref:
+        description: 'Base reference to compare against (e.g., main, origin/main)'
+        required: false
+        type: string
+        default: 'main'
+    outputs:
+      actions:
+        description: 'JSON array of changed action directories'
+        value: ${{ jobs.detect-changes.outputs.actions }}
+      root-changed:
+        description: 'Whether root configuration files changed'
+        value: ${{ jobs.detect-changes.outputs.root-changed }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      actions: ${{ steps.detect.outputs.actions }}
+      root-changed: ${{ steps.detect.outputs.root-changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect changed files
+        id: detect
+        run: |
+          git fetch origin ${{ inputs.base-ref }}
+          changed_files=$(git diff --name-only origin/${{ inputs.base-ref }}...HEAD)
+          
+          actions=()
+          for file in $changed_files; do
+            dir=$(dirname "$file")
+            while [[ "$dir" != "." ]]; do
+              if [[ -f "$dir/action.yml" ]] || [[ -f "$dir/action.yaml" ]]; then
+                if [[ ! " ${actions[@]} " =~ " ${dir} " ]]; then
+                  actions+=("$dir")
+                fi
+                break
+              fi
+              dir=$(dirname "$dir")
+            done
+          done
+          
+          root_changed="false"
+          for file in $changed_files; do
+            if [[ "$file" =~ ^(package\.json|package-lock\.json|eslint\.config\.mjs|tsconfig\.json|tsconfig\.eslint\.json|vitest\.config\.ts|\.prettierrc|\.prettierignore|\.github/workflows/) ]]; then
+              root_changed="true"
+              break
+            fi
+          done
+          
+          json_array=$(printf '%s\n' "${actions[@]}" | jq -R . | jq -s -c .)
+          echo "actions=$json_array" >> $GITHUB_OUTPUT
+          echo "root-changed=$root_changed" >> $GITHUB_OUTPUT
+          echo "Detected changed actions: $json_array"
+          echo "Root files changed: $root_changed"
