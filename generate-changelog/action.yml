@@ -1,0 +1,49 @@
+name: 'Generate Changelog with AI'
+description: 'Automatic AI-based human-readable CHANGELOG.md generation based on git commits'
+author: 'Your Name'
+
+branding:
+  icon: 'file-text'
+  color: 'blue'
+
+inputs:
+  openrouter-api-key:
+    description: 'OpenRouter API key for AI changelog generation'
+    required: true
+  github-token:
+    description: 'GitHub token with repo write permissions'
+    required: true
+    default: ${{ github.token }}
+  ai-model:
+    description: 'OpenRouter AI model to use for changelog generation'
+    required: false
+    default: 'openai/gpt-4o-mini'
+  changelog-path:
+    description: 'Path to CHANGELOG.md file'
+    required: false
+    default: 'CHANGELOG.md'
+  version-file:
+    description: 'Path to file containing current project version (e.g., package.json, version.txt)'
+    required: true
+
+outputs:
+  changelog-updated:
+    description: 'Whether the changelog was updated (true/false)'
+    value: ${{ steps.generate.outputs.updated }}
+  pr-number:
+    description: 'Pull request number if created/updated'
+    value: ${{ steps.generate.outputs.pr-number }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate Changelog
+      id: generate
+      shell: bash
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        AI_MODEL: ${{ inputs.ai-model }}
+        CHANGELOG_PATH: ${{ inputs.changelog-path }}
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: node ${{ github.action_path }}/dist/index.js

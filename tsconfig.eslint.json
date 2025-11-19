@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "generate-changelog/src/**/*",
+    "generate-changelog/tests/**/*",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
