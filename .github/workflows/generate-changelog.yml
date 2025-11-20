@@ -3,28 +3,32 @@ name: Generate Changelog
 on:
   workflow_dispatch:
     inputs:
-      action-path:
-        description: 'Path to the action (e.g., generate-changelog). Leave empty to detect from recent changes.'
+      action-name:
+        description: 'Name of the action (e.g., generate-changelog) that will have its changelog updated. Leave empty to detect from recent changes.'
         required: false
         type: string
+      pr-number:
+        description: 'Pull request number to generate changelog for'
+        required: false
+        type: number
 
 jobs:
   detect-changes:
-    if: ${{ !inputs.action-path }}
+    if: ${{ !inputs.action-name }}
     uses: ./.github/workflows/detect-changes.yml
     with:
       base-ref: ${{ github.base_ref || 'main' }}
 
   generate-changelogs:
     needs: detect-changes
-    if: always() && (needs.detect-changes.outputs.actions != '[]' || inputs.action-path)
+    if: always() && (needs.detect-changes.outputs.actions != '[]' || inputs.action-name)
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     strategy:
       matrix:
-        action: ${{ inputs.action-path && fromJson(format('["{0}"]', inputs.action-path)) || fromJson(needs.detect-changes.outputs.actions) }}
+        action: ${{ inputs.action-name && fromJson(format('["{0}"]', inputs.action-name)) || fromJson(needs.detect-changes.outputs.actions) }}
     steps:
       - uses: actions/checkout@v4
       
@@ -35,3 +39,4 @@ jobs:
           github-token: ${{ github.token }}
           version-file: '${{ matrix.action }}/package.json'
           changelog-path: '${{ matrix.action }}/CHANGELOG.md'
+          pr-number: ${{ inputs.pr-number }}

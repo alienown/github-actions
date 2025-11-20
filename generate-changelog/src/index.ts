@@ -14,6 +14,7 @@ async function run() {
     const aiModel = process.env.AI_MODEL || "openai/gpt-4o-mini";
     const changelogPath = process.env.CHANGELOG_PATH || "CHANGELOG.md";
     const versionFile = process.env.VERSION_FILE;
+    const prNumberInput = process.env.PR_NUMBER;
 
     if (!openrouterApiKey) {
       throw new Error("OPENROUTER_API_KEY is required");
@@ -36,23 +37,43 @@ async function run() {
 
     console.log("Event:", context.eventName);
     console.log("Ref:", context.ref);
-    console.log("PR:", context.payload.pull_request?.number);
 
-    // Determine if this is a PR event or direct push to main
+    // Determine if this is a PR event, direct push to main, or workflow_dispatch
     const isPREvent = context.eventName === "pull_request";
     const isDirectPush =
       context.eventName === "push" &&
       (context.ref === "refs/heads/main" ||
         context.ref === "refs/heads/master");
+    const isWorkflowDispatch = context.eventName === "workflow_dispatch";
 
-    if (!isPREvent && !isDirectPush) {
-      console.log("Skipping: Not a PR or direct push to main/master");
+    if (!isPREvent && !isDirectPush && !isWorkflowDispatch) {
+      console.log("Skipping: Not a PR, direct push to main/master, or workflow_dispatch");
       core.setOutput("changelog-updated", "false");
       return;
     }
 
+    // For workflow_dispatch, PR number is required
+    if (isWorkflowDispatch && !prNumberInput) {
+      throw new Error("PR_NUMBER is required for workflow_dispatch event");
+    }
+
+    // Determine PR number if applicable
+    let prNumber: number | undefined;
+    if (isPREvent) {
+      prNumber = context.payload.pull_request?.number;
+      if (!prNumber) {
+        throw new Error("PR number not found in context");
+      }
+    } else if (isWorkflowDispatch) {
+      prNumber = parseInt(prNumberInput!, 10);
+    }
+
+    if (prNumber) {
+      console.log(`Processing PR #${prNumber}`);
+    }
+
     // Get new commits
-    const commits = await getNewCommits(octokit, context, isPREvent);
+    const commits = await getNewCommits(octokit, context, prNumber);
 
     if (!commits || commits.length === 0) {
       console.log("No new commits found");
@@ -88,10 +109,9 @@ async function run() {
     );
 
     // Handle PR creation/update
-    if (isPREvent) {
-      const prNumber = context.payload.pull_request?.number;
+    if (isPREvent || isWorkflowDispatch) {
       if (!prNumber) {
-        throw new Error("PR number not found in context");
+        throw new Error("PR number not found");
       }
 
       // Update existing PR with changelog

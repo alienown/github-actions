@@ -14,27 +14,16 @@ type Context = typeof GitHubContext;
 describe("git-utils", () => {
   describe("getNewCommits", () => {
     describe("PR events", () => {
-      it("should fetch commits from PR when isPREvent is true", async () => {
+      it("should fetch commits using provided prNumber parameter", async () => {
         const mockCommits = [
           {
-            sha: "abc123",
+            sha: "test123",
             commit: {
-              message: "Add feature X",
+              message: "Test commit",
               author: {
-                name: "John Doe",
-                email: "john@example.com",
+                name: "Test User",
+                email: "test@example.com",
                 date: "2024-01-01",
-              },
-            },
-          },
-          {
-            sha: "def456",
-            commit: {
-              message: "Fix bug Y",
-              author: {
-                name: "Jane Smith",
-                email: "jane@example.com",
-                date: "2024-01-02",
               },
             },
           },
@@ -50,50 +39,26 @@ describe("git-utils", () => {
 
         const mockContext = {
           repo: { owner: "test-owner", repo: "test-repo" },
-          payload: { pull_request: { number: 42 } },
+          payload: {},
         };
 
         const result = await getNewCommits(
           mockOctokit as unknown as Octokit,
           mockContext as unknown as Context,
-          true,
+          99,
         );
 
         expect(mockOctokit.rest.pulls.listCommits).toHaveBeenCalledWith({
           owner: "test-owner",
           repo: "test-repo",
-          pull_number: 42,
+          pull_number: 99,
         });
         expect(result).toEqual(mockCommits);
-        expect(result).toHaveLength(2);
-      });
-
-      it("should throw error when PR number is not found in context", async () => {
-        const mockOctokit = {
-          rest: {
-            pulls: {
-              listCommits: vi.fn(),
-            },
-          },
-        };
-
-        const mockContext = {
-          repo: { owner: "test-owner", repo: "test-repo" },
-          payload: {},
-        };
-
-        await expect(
-          getNewCommits(
-            mockOctokit as unknown as Octokit,
-            mockContext as unknown as Context,
-            true,
-          ),
-        ).rejects.toThrowError("PR number not found in context");
       });
     });
 
     describe("push events", () => {
-      it("should fetch commits from push when isPREvent is false", async () => {
+      it("should fetch commits from push when prNumber not provided", async () => {
         const mockCommits = [
           {
             sha: "xyz789",
@@ -151,7 +116,6 @@ describe("git-utils", () => {
         const result = await getNewCommits(
           mockOctokit as unknown as Octokit,
           mockContext as unknown as Context,
-          false,
         );
 
         expect(mockOctokit.rest.repos.compareCommits).toHaveBeenCalledWith({
@@ -196,7 +160,6 @@ describe("git-utils", () => {
         const result = await getNewCommits(
           mockOctokit as unknown as Octokit,
           mockContext as unknown as Context,
-          false,
         );
 
         expect(mockOctokit.rest.repos.getCommit).toHaveBeenCalledWith({
@@ -240,7 +203,6 @@ describe("git-utils", () => {
         const result = await getNewCommits(
           mockOctokit as unknown as Octokit,
           mockContext as unknown as Context,
-          false,
         );
 
         expect(result).toEqual([mockCommit]);
@@ -266,7 +228,6 @@ describe("git-utils", () => {
           getNewCommits(
             mockOctokit as unknown as Octokit,
             mockContext as unknown as Context,
-            false,
           ),
         ).rejects.toThrowError("After SHA not found in push payload");
       });
@@ -293,7 +254,7 @@ describe("git-utils", () => {
           getNewCommits(
             mockOctokit as unknown as Octokit,
             mockContext as unknown as Context,
-            true,
+            42,
           ),
         ).rejects.toThrowError("API rate limit exceeded");
       });
@@ -321,7 +282,6 @@ describe("git-utils", () => {
           getNewCommits(
             mockOctokit as unknown as Octokit,
             mockContext as unknown as Context,
-            false,
           ),
         ).rejects.toThrowError("Network error");
       });
