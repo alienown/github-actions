@@ -30,16 +30,18 @@ REFINE the changelog entry by:
 5. Use bullet points (-) for each change
 6. Write in natural language (not just a list of commits)
 7. Group related changes together when possible
-8. Focus on user-facing changes and impacts
+8. Focus on user-facing changes and impacts. Include ONLY functional changes (new features, bug fixes, improvements, breaking changes). EXCLUDE bureaucratic changes such as: test updates, documentation adjustments, code formatting, linting changes, regenerating dist files, or internal refactoring that doesn't affect functionality
 9. Use clear, simple language
 10. Start directly with the version header (no "Here is..." or similar preambles)
+11. Be concise and clear, make each word count
+12. End each bullet point with a period.
 
 Example format:
 ## ${version}
 
-- Added new user authentication feature with OAuth2 support
-- Fixed critical bug in form validation that prevented submissions
-- Improved API documentation with more examples
+- Added new user authentication feature with OAuth2 support.
+- Fixed critical bug in form validation that prevented submissions.
+- Improved API documentation with more examples.
 
 Format the output exactly as shown above, ready to be inserted into CHANGELOG.md.`;
 }
@@ -61,16 +63,18 @@ Generate a human-readable, concise changelog entry that:
 3. Write in natural language (not just a list of commits)
 4. Summarize what was changed, added, fixed, or improved
 5. Group related changes together when possible
-6. Focus on user-facing changes and impacts
+6. Focus on user-facing changes and impacts. Include ONLY functional changes (new features, bug fixes, improvements, breaking changes). EXCLUDE bureaucratic changes such as: test updates, documentation adjustments, code formatting, linting changes, regenerating dist files, or internal refactoring that doesn't affect functionality
 7. Use clear, simple language
 8. Start directly with the version header (no "Here is..." or similar preambles)
+9. Be concise and clear, make each word count
+10. End each bullet point with a period.
 
 Example format:
 ## ${version}
 
-- Added new user authentication feature with OAuth2 support
-- Fixed critical bug in form validation that prevented submissions
-- Improved API documentation with more examples
+- Added new user authentication feature with OAuth2 support.
+- Fixed critical bug in form validation that prevented submissions.
+- Improved API documentation with more examples.
 
 Format the output exactly as shown above, ready to be inserted into CHANGELOG.md.`;
 }
@@ -131,7 +135,7 @@ export async function generateChangelogEntry(
       throw new Error("No valid changelog content received from OpenRouter AI");
     }
 
-    return changelog;
+    return changelog.trim();
   } catch (error) {
     console.error("Error generating changelog with AI:", error);
     throw error;

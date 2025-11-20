@@ -8,6 +8,7 @@ Automatically generates CHANGELOG.md entries using AI based on git commit messag
 - Analyzes git commit messages and generates human-readable descriptions in natural language
 - Commits updated CHANGELOG.md directly to PR branch when new commits are added
 - Creates new PR with CHANGELOG.md when commits go directly to main/master
+- Supports manual workflow dispatch to update changelog for specific PRs
 - Appends new changes to existing version section if it already exists
 - Uses OpenRouter API for AI-powered changelog generation
 - Supports multiple version file formats (package.json, plain text)
@@ -74,13 +75,50 @@ jobs:
           version-file: 'package.json'
 ```
 
+### Manual workflow dispatch
+
+You can manually trigger changelog generation for a specific PR:
+
+```yaml
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 'Pull request number to generate changelog for'
+        required: true
+        type: number
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate Changelog
+        uses: alienown/github-actions/generate-changelog@v1
+        with:
+          openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-file: 'package.json'
+          pr-number: ${{ inputs.pr-number }}
+```
+
+To use: Go to Actions tab → Select workflow → Run workflow → Enter PR number
+
 ## Inputs
 
 | Input | Description | Required | Default |
-|-------|-------------|----------|---------|
+|-------|-------------|----------|------|
 | `openrouter-api-key` | OpenRouter API key | ✅ Yes | - |
 | `github-token` | GitHub token with repo write permissions | ✅ Yes | `${{ github.token }}` |
 | `version-file` | Path to file containing version (supports: single-line version text file or `package.json`) | ✅ Yes | - |
+| `pr-number` | Pull request number to update (used with workflow_dispatch event) | ❌ No | - |
 | `ai-model` | OpenRouter AI model to use for changelog generation | ❌ No | `openai/gpt-4o-mini` |
 | `changelog-path` | Path to CHANGELOG.md file | ❌ No | `CHANGELOG.md` |
 
@@ -125,6 +163,14 @@ permissions:
    - Sends commit messages to AI to generate a changelog entry
    - Creates a new branch and PR with the updated CHANGELOG.md
    - If an entry for the current version already exists, new changes are appended to that section
+
+3. **Workflow Dispatch**: When manually triggered with a PR number:
+   - Fetches all commits from the specified PR (maximum 250 commits)
+   - Reads the version from your specified version file
+   - Sends commit messages and version info to AI to generate a changelog entry
+   - Commits the updated CHANGELOG.md directly to the specified PR branch
+   - If an entry for the current version already exists, new changes are appended to that section
+   - Useful for regenerating changelog for existing PRs or when automatic triggers didn't run
 
 ## Version File Format
 

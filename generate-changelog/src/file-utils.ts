@@ -147,7 +147,7 @@ export async function buildChangelogContent(
           insertIndex++;
         }
 
-        lines.splice(insertIndex, 0, newEntry.trim());
+        lines.splice(insertIndex, 0, newEntry.trim(), "");
         updatedContent = lines.join("\n");
       } else {
         // No header found, prepend

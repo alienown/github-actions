@@ -25,6 +25,9 @@ inputs:
   version-file:
     description: 'Path to file containing current project version (e.g., package.json, version.txt)'
     required: true
+  pr-number:
+    description: 'Pull request number to update (used with workflow_dispatch event)'
+    required: false
 
 outputs:
   changelog-updated:
@@ -46,4 +49,5 @@ runs:
         AI_MODEL: ${{ inputs.ai-model }}
         CHANGELOG_PATH: ${{ inputs.changelog-path }}
         VERSION_FILE: ${{ inputs.version-file }}
+        PR_NUMBER: ${{ inputs.pr-number }}
       run: node ${{ github.action_path }}/dist/index.js

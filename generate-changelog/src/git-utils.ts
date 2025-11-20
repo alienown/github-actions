@@ -1,5 +1,5 @@
 import { GithubContext, OctokitInstance } from "./types";
-import { PushEvent, PullRequestEvent } from "@octokit/webhooks-types";
+import { PushEvent } from "@octokit/webhooks-types";
 
 /**
  * Get new commits that need to be included in changelog
@@ -7,19 +7,13 @@ import { PushEvent, PullRequestEvent } from "@octokit/webhooks-types";
 export async function getNewCommits(
   octokit: OctokitInstance,
   context: GithubContext,
-  isPREvent: boolean,
+  prNumber?: number,
 ) {
   const { owner, repo } = context.repo;
 
   try {
-    if (isPREvent) {
+    if (prNumber) {
       // Get commits from the PR
-      const payload = context.payload as PullRequestEvent;
-      const prNumber = payload.pull_request?.number;
-      if (!prNumber) {
-        throw new Error("PR number not found in context");
-      }
-
       // INFO: this function lists maximum 250 commits;
       const { data } = await octokit.rest.pulls.listCommits({
         owner,

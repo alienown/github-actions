@@ -62,7 +62,7 @@ describe("file-utils", () => {
         const result = await buildChangelogContent("CHANGELOG.md", newEntry);
 
         expect(result).toBe(
-          "# Changelog\n\n## 2.0.0\n\n- New feature\n## 1.0.0\n\n- Previous release",
+          "# Changelog\n\n## 2.0.0\n\n- New feature\n\n## 1.0.0\n\n- Previous release",
         );
       });
 
@@ -132,7 +132,7 @@ describe("file-utils", () => {
         const result = await buildChangelogContent("CHANGELOG.md", newEntry);
 
         expect(result).toBe(
-          "# Changelog\n\n- New feature without header\n## 1.0.0\n\n- Old",
+          "# Changelog\n\n- New feature without header\n\n## 1.0.0\n\n- Old",
         );
       });
 
@@ -144,7 +144,7 @@ describe("file-utils", () => {
         const result = await buildChangelogContent("CHANGELOG.md", newEntry);
 
         expect(result).toBe(
-          "# Changelog\n\n## 2.0.0\n\n- New feature\n## 1.0.0\n\n- Old",
+          "# Changelog\n\n## 2.0.0\n\n- New feature\n\n## 1.0.0\n\n- Old",
         );
       });
     });
