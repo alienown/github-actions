@@ -43,7 +43,7 @@ jobs:
           openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version-file: 'package.json'
-          ai-model: 'openai/gpt-4o-mini'  # optional
+          ai-model: 'anthropic/claude-sonnet-4.5'  # optional
 ```
 
 ### For direct push to main
@@ -119,7 +119,7 @@ To use: Go to Actions tab → Select workflow → Run workflow → Enter PR numb
 | `github-token` | GitHub token with repo write permissions | ✅ Yes | `${{ github.token }}` |
 | `version-file` | Path to file containing version (supports: single-line version text file or `package.json`) | ✅ Yes | - |
 | `pr-number` | Pull request number to update (used with workflow_dispatch event) | ❌ No | - |
-| `ai-model` | OpenRouter AI model to use for changelog generation | ❌ No | `openai/gpt-4o-mini` |
+| `ai-model` | OpenRouter AI model to use for changelog generation | ❌ No | `anthropic/claude-sonnet-4.5` |
 | `changelog-path` | Path to CHANGELOG.md file | ❌ No | `CHANGELOG.md` |
 
 ## Outputs
@@ -220,38 +220,9 @@ Any content after the first line is ignored.
 
 ## AI Models
 
-You can use different models from OpenRouter, e.g.:
-- `openai/gpt-4o-mini` (default, cheaper)
-- `openai/gpt-4o`
-- `anthropic/claude-3.5-sonnet`
-- `google/gemini-pro-1.5`
-
-See full list: https://openrouter.ai/models
+You can use different models from OpenRouter, see full list at: https://openrouter.ai/models. Be advised that different models may yield varying quality of changelog generation.
 
 ## Development
-
-### Project Structure
-
-```
-generate-changelog/
-├── action.yml              # GitHub Action definition
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── index.ts           # Main entry point
-│   ├── changelog-generator.ts  # OpenRouter AI communication
-│   ├── git-utils.ts       # Fetching commits from GitHub
-│   ├── file-utils.ts      # CHANGELOG.md file operations
-│   ├── pr-manager.ts      # Pull Request creation/update
-│   ├── version-utils.ts   # Version file parsing
-│   └── types.ts           # TypeScript type definitions
-├── tests/
-│   ├── file-utils.test.ts
-│   ├── git-utils.test.ts
-│   ├── pr-manager.test.ts
-│   └── version-utils.test.ts
-└── README.md
-```
 
 ### Build and Test
 
@@ -265,11 +236,28 @@ npm run build
 # Run tests
 npm test
 
+# Run promptfoo tests
+npm run promptfoo:test
+
 # Format code
 npm run format
 
 # Lint code
 npm run lint
+```
+
+### Promptfoo Testing
+
+The project uses [promptfoo](https://promptfoo.dev/) to test and evaluate the AI prompt quality. Promptfoo tests are located in `tests/promptfoo.yaml` and validate that the changelog generation prompt produces consistent, well-formatted output.
+
+To run promptfoo tests:
+
+```bash
+# Set your OpenRouter API key
+$env:OPENROUTER_API_KEY = "your-api-key"
+
+# Run promptfoo evaluation
+npm run promptfoo:test
 ```
 
 ## License

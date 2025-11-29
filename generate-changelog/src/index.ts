@@ -11,7 +11,7 @@ async function run() {
     // Get inputs
     const openrouterApiKey = process.env.OPENROUTER_API_KEY;
     const githubToken = process.env.GITHUB_TOKEN;
-    const aiModel = process.env.AI_MODEL || "openai/gpt-4o-mini";
+    const aiModel = process.env.AI_MODEL || "anthropic/claude-sonnet-4.5";
     const changelogPath = process.env.CHANGELOG_PATH || "CHANGELOG.md";
     const versionFile = process.env.VERSION_FILE;
     const prNumberInput = process.env.PR_NUMBER;

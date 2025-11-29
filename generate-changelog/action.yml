@@ -17,7 +17,7 @@ inputs:
   ai-model:
     description: 'OpenRouter AI model to use for changelog generation'
     required: false
-    default: 'openai/gpt-4o-mini'
+    default: 'anthropic/claude-sonnet-4.5'
   changelog-path:
     description: 'Path to CHANGELOG.md file'
     required: false

@@ -1,0 +1,32 @@
+name: Generate Changelog action pull request workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "generate-changelog/src/changelog-generator.ts"
+      - "generate-changelog/tests/promptfoo.yaml"
+      - "generate-changelog/tests/changelog-generator.ts"
+      - ".github/workflows/generate-changelog-pull-request.yml"
+
+jobs:
+  promptfoo-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Run promptfoo tests
+        working-directory: generate-changelog
+        run: npm run promptfoo:test
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

@@ -1,0 +1,214 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+description: "Changelog Generator - Prompt Testing"
+
+prompts:
+  - file://changelog-generator.ts:createPrompt
+
+providers:
+  - id: openrouter:anthropic/claude-sonnet-4.5
+    label: "claude-sonnet-4.5"
+
+tests:
+  # ============================================
+  # NEW ENTRY TESTS
+  # ============================================
+
+  - description: "[New Entry] Correct format: version header (## X.X.X), bullet points with dashes, periods at end"
+    vars:
+      version: "1.0.0"
+      commitMessages: |
+        - Added user authentication with OAuth2
+        - Fixed critical bug in form validation
+        - Improved API performance by 50%
+      currentVersionContent: null
+    assert:
+      - type: javascript
+        value: output.trim().startsWith('## 1.0.0')
+
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).length > 0
+
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).every(l => l.trim().endsWith('.'));
+
+  - description: "[New Entry] Include functional and breaking changes, exclude non-functional changes"
+    vars:
+      version: "1.0.0"
+      commitMessages: |
+        - Added user authentication with OAuth2
+        - Fixed critical bug in form validation
+        - Improved API performance by 50%
+        - BREAKING CHANGE: Removed deprecated v1 API endpoints
+        - Updated test coverage
+        - Fixed typo in documentation
+        - Reformatted code with prettier
+      currentVersionContent: null
+    assert:
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).length >= 4
+
+      - type: llm-rubric
+        value: |
+          The changelog should include functional changes (features, bug fixes, improvements) AND breaking changes.
+          It MUST include: OAuth2 authentication, form validation fix, API performance improvement, and the breaking change about removed v1 API endpoints.
+          It should NOT include: test updates, documentation changes, code formatting, or refactoring.
+          Check if non-functional changes like "test coverage", "documentation", "reformatted" are excluded.
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  - description: "[New Entry] Handle all non-functional commits appropriately - new minimal entry"
+    vars:
+      version: "2.0.0"
+      commitMessages: |
+        - Updated README.md with installation instructions
+        - Added unit tests for utils module
+        - Fixed ESLint warnings
+        - Regenerated dist files
+      currentVersionContent: null
+    assert:
+      - type: javascript
+        value: output.trim().startsWith('## 2.0.0')
+
+      - type: llm-rubric
+        value: |
+          Since all commits are non-functional (documentation, tests, linting, dist regeneration),
+          the changelog should contain a minimal entry summarizing the non-functional changes
+          (e.g., "Readme/docs updated, new tests added, fixed lint issues.").
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  - description: "[New Entry] Changes appear in same order as commit messages"
+    vars:
+      version: "1.0.0"
+      commitMessages: |
+        - Added user authentication with OAuth2
+        - Fixed critical bug in form validation
+        - Improved API performance by 50%
+      currentVersionContent: null
+    assert:
+      - type: llm-rubric
+        value: |
+          Check if the order of changes in the changelog matches the order of commit messages provided.
+          First should be authentication, then bug fix, then performance improvement.
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  - description: "[New Entry] Merge/group similar changes"
+    vars:
+      version: "1.6.0"
+      commitMessages: |
+        - Fixed button alignment on homepage
+        - Fixed button alignment on settings page
+        - Fixed button alignment on profile page
+        - Added dark mode support
+        - Improved db query performance
+      currentVersionContent: null
+    assert:
+      - type: javascript
+        value: output.trim().startsWith('## 1.6.0')
+
+      - type: llm-rubric
+        value: |
+          The changelog should consolidate similar changes. The three button alignment fixes
+          should be merged into a single entry (e.g., "Fixed button alignment across multiple pages")
+          rather than listing each change separately. The dark mode addition and query performance should be treated as separate entries. So there should be three bullet points total.
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  # ============================================
+  # REFINEMENT TESTS
+  # ============================================
+
+  - description: "[Refinement] Correct format: version header (## X.X.X), bullet points with dashes, periods at end"
+    vars:
+      version: "1.4.0"
+      commitMessages: |
+        - Added user profile customization
+        - Fixed session timeout handling
+      currentVersionContent: |
+        - Added basic settings page.
+    assert:
+      - type: javascript
+        value: output.trim().startsWith('## 1.4.0')
+
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).length > 0
+
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).every(l => l.trim().endsWith('.'))
+
+  - description: "[Refinement] Include functional and breaking changes, exclude non-functional changes"
+    vars:
+      version: "1.0.0"
+      commitMessages: |
+        - Added user authentication with OAuth2
+        - Fixed critical bug in form validation
+        - Improved API performance by 50%
+        - BREAKING CHANGE: Removed deprecated v1 API endpoints
+        - Updated test coverage
+        - Fixed typo in documentation
+        - Reformatted code with prettier
+      currentVersionContent: |
+        - Added new payment gateway integration.
+        - Fixed memory leak in background tasks.
+    assert:
+      - type: javascript
+        value: output.split('\n').filter(l => l.trim().startsWith('-')).length >= 4
+
+      - type: llm-rubric
+        value: |
+          The changelog should include functional changes (features, bug fixes, improvements) AND breaking changes.
+          It MUST include: Payment gateway integration, fixed memory leak in background tasks, OAuth2 authentication, form validation fix, API performance improvement, and the breaking change about removed v1 API endpoints.
+          It should NOT include: test updates, documentation changes, code formatting, or refactoring.
+          Check if non-functional changes like "test coverage", "documentation", "reformatted" are excluded.
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  - description: "[Refinement] Handle all non-functional commits appropriately - retain existing content adjusting for style rules only (missing dash and period)"
+    vars:
+      version: "2.0.0"
+      commitMessages: |
+        - Updated README.md with installation instructions
+        - Added unit tests for utils module
+        - Fixed ESLint warnings
+        - Regenerated dist files
+      currentVersionContent: |
+        - Added new payment gateway integration
+        Fixed memory leak in background tasks.
+    assert:
+      - type: javascript
+        value: output.trim() === `## 2.0.0\n\n- Added new payment gateway integration.\n- Fixed memory leak in background tasks.`.trim()
+
+  - description: "[Refinement] Changes appear in same order as commit messages"
+    vars:
+      version: "1.3.0"
+      commitMessages: |
+        - Added feedback button on homepage
+        - Fixed pagination bug in reports
+      currentVersionContent: |
+        - Added CSV export functionality.
+        - Improved report generation speed.
+    assert:
+      - type: javascript
+        value: output.trim().startsWith('## 1.3.0')
+
+      - type: llm-rubric
+        value: |
+          The refined changelog should maintain chronological order with newer changes first.
+          The new commits (feedback button, pagination fix) should appear BEFORE the existing entries
+          (CSV export, report generation speed). The order should be:
+          1. Added feedback button
+          2. Pagination fix
+          3. CSV export
+          4. Report generation speed
+        provider: openrouter:anthropic/claude-sonnet-4.5
+
+  - description: "[Refinement] Merge/group similar changes"
+    vars:
+      version: "1.2.0"
+      commitMessages: |
+        - Added OAuth2 login with Microsoft and LinkedIn
+      currentVersionContent: |
+        - Added OAuth2 login with Google and Facebook.
+        - Improved error handling on the UI.
+    assert:
+      - type: llm-rubric
+        value: |
+          Authentication related changes should be merged into a single bullet point in the changelog. Error handling should be a separate bullet point.
+        provider: openrouter:anthropic/claude-sonnet-4.5
